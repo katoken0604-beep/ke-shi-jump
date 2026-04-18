@@ -186,6 +186,10 @@ function draw() {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
+  if (!state.player) {
+    return;
+  }
+
   // グリッド状ブロック地面
   ctx.fillStyle = "#2d5016";
   const groundY2 = height - settings.groundHeight;
