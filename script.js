@@ -7,21 +7,24 @@ const scoreElement = document.getElementById("score");
 const bestScoreElement = document.getElementById("bestScore");
 
 const images = {
-  run1: new Image(),
-  run2: new Image(),
+  beforeJump: new Image(),
+  jumping: new Image(),
+  landing: new Image(),
+  run: new Image(),
 };
-images.run1.src = "けーし.png";
-images.run2.src = "けーし2.png";
+images.beforeJump.src = "ジャンプ前.png";
+images.jumping.src = "ジャンプ.png";
+images.landing.src = "着地.png";
+images.run.src = "けーし2.png";
 
 const settings = {
-  groundHeight: 110,
-  gravity: 0.9,
+  groundHeight: 140,
+  gravity: 0.85,
   jumpStrength: -18,
   groundY: 0,
-  obstacleSpeed: 7,
-  obstacleFrequency: 1600,
-  obstacleWidth: 48,
-  obstacleHeight: 64,
+  obstacleSpeed: 6.5,
+  obstacleFrequency: 1400,
+  tileSize: 32,
 };
 
 const state = {
@@ -49,16 +52,17 @@ function resizeCanvas() {
 }
 
 function createPlayer() {
-  const width = 72;
-  const height = 80;
+  const width = 80;
+  const height = 96;
   return {
-    x: 60,
+    x: 50,
     y: state.height - settings.groundHeight - height,
     width,
     height,
     vy: 0,
     onGround: true,
-    state: "running",
+    state: "beforeJump",
+    landingTimer: 0,
   };
 }
 
@@ -121,21 +125,26 @@ function update(delta) {
   }
 
   state.frameTime += delta;
-  if (player.onGround && state.frameTime > 140) {
+  if (player.onGround && state.frameTime > 150) {
     state.frameTime = 0;
     state.frameIndex = (state.frameIndex + 1) % 2;
   }
 
-  if (player.state === "running") {
-    player.y += Math.sin(Date.now() / 150) * 0.6;
+  if (player.onGround) {
+    player.state = "beforeJump";
+    player.landingTimer = 0;
+  } else if (player.vy > 5) {
+    player.state = "landing";
+  } else {
+    player.state = "jumping";
   }
 
   if (Date.now() - state.lastObstacleTime > settings.obstacleFrequency) {
     state.obstacles.push({
       x: state.width + 20,
-      width: settings.obstacleWidth,
-      height: settings.obstacleHeight,
-      y: state.height - settings.groundHeight - settings.obstacleHeight,
+      width: 56,
+      height: 72,
+      y: state.height - settings.groundHeight - 72,
     });
     state.lastObstacleTime = Date.now();
   }
@@ -147,10 +156,10 @@ function update(delta) {
 
   state.obstacles.forEach((obstacle) => {
     if (
-      player.x < obstacle.x + obstacle.width - 8 &&
+      player.x < obstacle.x + obstacle.width - 10 &&
       player.x + player.width - 12 > obstacle.x &&
-      player.y < obstacle.y + obstacle.height - 6 &&
-      player.y + player.height > obstacle.y + 8
+      player.y < obstacle.y + obstacle.height - 10 &&
+      player.y + player.height - 10 > obstacle.y
     ) {
       gameOver();
     }
@@ -167,19 +176,40 @@ function draw() {
 
   ctx.clearRect(0, 0, width, height);
 
+  // マリオ1面風背景
   const gradient = ctx.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, "#2c5cac");
-  gradient.addColorStop(0.55, "#15213d");
-  gradient.addColorStop(1, "#08101d");
+  gradient.addColorStop(0, "#5da3d5");
+  gradient.addColorStop(1, "#87ceeb");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  ctx.fillStyle = "#0f1626";
-  ctx.fillRect(0, height - settings.groundHeight, width, settings.groundHeight);
+  // グリッド状ブロック地面
+  ctx.fillStyle = "#2d5016";
+  const groundY2 = height - settings.groundHeight;
+  ctx.fillRect(0, groundY2, width, settings.groundHeight);
+
+  // ブロックパターン
+  ctx.fillStyle = "rgba(0,0,0,0.1)";
+  for (let x = 0; x < width; x += settings.tileSize) {
+    for (let y = groundY2; y < height; y += settings.tileSize) {
+      if ((Math.floor(x / settings.tileSize) + Math.floor(y / settings.tileSize)) % 2 === 0) {
+        ctx.fillRect(x, y, settings.tileSize, settings.tileSize);
+      }
+    }
+  }
 
   ctx.save();
   const player = state.player;
-  const frame = player.state === "jumping" ? images.run2 : state.frameIndex === 0 ? images.run1 : images.run2;
+  let frame;
+  
+  if (player.state === "jumping") {
+    frame = images.jumping;
+  } else if (player.state === "landing") {
+    frame = images.landing;
+  } else {
+    frame = state.frameIndex === 0 ? images.beforeJump : images.run;
+  }
+  
   const drawX = player.x;
   const drawY = player.y;
   const drawW = player.width;
@@ -196,10 +226,16 @@ function draw() {
   ctx.restore();
 
   state.obstacles.forEach((obstacle) => {
-    ctx.fillStyle = "#f45c58";
+    ctx.fillStyle = "#cd3e3e";
     ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-    ctx.fillStyle = "rgba(255,255,255,0.15)";
-    ctx.fillRect(obstacle.x + 8, obstacle.y + 8, obstacle.width - 16, obstacle.height - 16);
+    
+    // ブロック表現
+    ctx.fillStyle = "rgba(255,255,255,0.2)";
+    ctx.fillRect(obstacle.x + 4, obstacle.y + 4, obstacle.width - 8, obstacle.height - 8);
+    
+    ctx.strokeStyle = "rgba(0,0,0,0.3)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
   });
 
   ctx.fillStyle = "rgba(255,255,255,0.08)";
