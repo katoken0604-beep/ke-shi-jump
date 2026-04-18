@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>けーしジャンプ</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="title-bar">
+      <div>
+        <h1>けーしジャンプ</h1>
+        <p>タップでジャンプして障害物を避けよう！</p>
+      </div>
+      <button id="restartButton" class="action-button">スタート</button>
+    </header>
+
+    <div class="game-area">
+      <canvas id="gameCanvas"></canvas>
+      <div class="overlay" id="overlay">
+        <p class="overlay-text" id="overlayText">タップでジャンプ</p>
+      </div>
+    </div>
+
+    <footer class="status-bar">
+      <div>スコア: <span id="score">0</span></div>
+      <div>ベスト: <span id="bestScore">0</span></div>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
