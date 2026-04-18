@@ -313,13 +313,13 @@ function loop(timestamp) {
 
 function initialize() {
   resizeCanvas();
-  window.addEventListener("resize", resizeCanvas);
-  window.addEventListener("click", onTap);
-  window.addEventListener("touchstart", (event) => {
+  canvas.addEventListener("click", onTap);
+  canvas.addEventListener("touchstart", (event) => {
     event.preventDefault();
     onTap();
   }, { passive: false });
-  restartButton.addEventListener("click", () => onTap());
+  restartButton.addEventListener("click", onTap);
+  window.addEventListener("resize", resizeCanvas);
   
   let loadedCount = 0;
   const imageList = Object.values(images);
@@ -329,8 +329,9 @@ function initialize() {
     loadedCount += 1;
     console.log(`Image loaded: ${loadedCount}/${totalImages}`);
     if (loadedCount === totalImages) {
-      console.log("All images loaded, starting game");
-      startGame();
+      console.log("All images loaded, ready to start");
+      overlayText.textContent = "スタートを押してね";
+      overlay.style.opacity = "0.9";
     }
   };
   
