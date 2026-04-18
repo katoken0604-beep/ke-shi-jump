@@ -12,10 +12,10 @@ const images = {
   landing: new Image(),
   run: new Image(),
 };
-images.beforeJump.src = "ジャンプ前.png";
-images.jumping.src = "ジャンプ.png";
-images.landing.src = "着地.png";
-images.run.src = "けーし2.png";
+images.beforeJump.src = "jump_before.png";
+images.jumping.src = "jump.png";
+images.landing.src = "land.png";
+images.run.src = "run.png";
 
 const settings = {
   groundHeight: 140,
@@ -265,19 +265,24 @@ function initialize() {
     onTap();
   }, { passive: false });
   restartButton.addEventListener("click", () => onTap());
-  if (images.run2.complete && images.run1.complete) {
-    startGame();
-  } else {
-    let loadedCount = 0;
-    Object.values(images).forEach((img) => {
-      img.addEventListener("load", () => {
-        loadedCount += 1;
-        if (loadedCount === Object.keys(images).length) {
-          startGame();
-        }
-      });
+  
+  let loadedCount = 0;
+  const imageList = Object.values(images);
+  const totalImages = imageList.length;
+  
+  const handleImageLoad = () => {
+    loadedCount += 1;
+    if (loadedCount === totalImages) {
+      startGame();
+    }
+  };
+  
+  imageList.forEach((img) => {
+    img.addEventListener("load", handleImageLoad);
+    img.addEventListener("error", () => {
+      console.error("Failed to load image:", img.src);
     });
-  }
+  });
   requestAnimationFrame(loop);
 }
 
