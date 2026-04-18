@@ -7,12 +7,10 @@ const scoreElement = document.getElementById("score");
 const bestScoreElement = document.getElementById("bestScore");
 
 const images = {
-  beforeJump: new Image(),
   jumping: new Image(),
   landing: new Image(),
   run: new Image(),
 };
-images.beforeJump.src = "jump_before.png";
 images.jumping.src = "jump.png";
 images.landing.src = "land.png";
 images.run.src = "run.png";
@@ -62,7 +60,7 @@ function createPlayer() {
     height,
     vy: 0,
     onGround: true,
-    state: "beforeJump",
+    state: "run",
     landingTimer: 0,
   };
 }
@@ -120,11 +118,15 @@ function update(delta) {
   player.y += player.vy;
 
   const groundY = state.height - settings.groundHeight - player.height;
+  const wasInAir = !player.onGround;
   if (player.y >= groundY) {
     player.y = groundY;
     player.vy = 0;
+    if (wasInAir) {
+      player.state = "landing";
+      player.landingTimer = 0;
+    }
     player.onGround = true;
-    player.state = "running";
   }
 
   state.frameTime += delta;
@@ -134,10 +136,14 @@ function update(delta) {
   }
 
   if (player.onGround) {
-    player.state = "beforeJump";
-    player.landingTimer = 0;
-  } else if (player.vy > 5) {
-    player.state = "landing";
+    if (player.state === "landing") {
+      player.landingTimer += delta;
+      if (player.landingTimer > 180) {
+        player.state = "run";
+      }
+    } else {
+      player.state = "run";
+    }
   } else {
     player.state = "jumping";
   }
@@ -214,7 +220,7 @@ function draw() {
   } else if (player.state === "landing") {
     frame = images.landing;
   } else {
-    frame = state.frameIndex === 0 ? images.beforeJump : images.run;
+    frame = images.run;
   }
   
   const drawX = player.x;
