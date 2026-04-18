@@ -9,11 +9,19 @@ const bestScoreElement = document.getElementById("bestScore");
 const images = {
   jumping: new Image(),
   landing: new Image(),
-  run: new Image(),
+  walk: new Image(),
+  logo: new Image(),
 };
 images.jumping.src = "jump.png";
 images.landing.src = "land.png";
-images.run.src = "run.png";
+images.walk.src = "歩く.png";
+images.logo.src = "けーし.png";
+
+const walkSettings = {
+  frameCount: 3,
+  frameWidth: 512,
+  frameHeight: 1024,
+};
 
 const settings = {
   groundHeight: 140,
@@ -130,15 +138,15 @@ function update(delta) {
   }
 
   state.frameTime += delta;
-  if (player.onGround && state.frameTime > 150) {
+  if (player.onGround && state.frameTime > 120) {
     state.frameTime = 0;
-    state.frameIndex = (state.frameIndex + 1) % 2;
+    state.frameIndex = (state.frameIndex + 1) % walkSettings.frameCount;
   }
 
   if (player.onGround) {
     if (player.state === "landing") {
       player.landingTimer += delta;
-      if (player.landingTimer > 180) {
+      if (player.landingTimer > 220) {
         player.state = "run";
       }
     } else {
@@ -213,16 +221,26 @@ function draw() {
 
   ctx.save();
   const player = state.player;
-  let frame;
-  
+  let frame = images.walk;
+  let sourceX = 0;
+  let sourceY = 0;
+  let sourceW = walkSettings.frameWidth;
+  let sourceH = walkSettings.frameHeight;
+
   if (player.state === "jumping") {
     frame = images.jumping;
+    sourceW = player.width;
+    sourceH = player.height;
   } else if (player.state === "landing") {
     frame = images.landing;
+    sourceW = player.width;
+    sourceH = player.height;
   } else {
-    frame = images.run;
+    sourceX = state.frameIndex * walkSettings.frameWidth;
+    sourceW = walkSettings.frameWidth;
+    sourceH = walkSettings.frameHeight;
   }
-  
+
   const drawX = player.x;
   const drawY = player.y;
   const drawW = player.width;
@@ -235,7 +253,13 @@ function draw() {
   ctx.ellipse(drawX + drawW / 2, height - settings.groundHeight + 5, shadowWidth, shadowHeight, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  ctx.drawImage(frame, drawX, drawY, drawW, drawH);
+  if (player.state === "jumping" || player.state === "landing") {
+    const srcW = frame.naturalWidth || frame.width;
+    const srcH = frame.naturalHeight || frame.height;
+    ctx.drawImage(frame, 0, 0, srcW, srcH, drawX, drawY, drawW, drawH);
+  } else {
+    ctx.drawImage(frame, sourceX, sourceY, sourceW, sourceH, drawX, drawY, drawW, drawH);
+  }
   ctx.restore();
 
   state.obstacles.forEach((obstacle) => {
@@ -256,6 +280,24 @@ function draw() {
     const stripeX = (i * 120 + (Date.now() / 18) % 120) % width;
     ctx.fillRect(stripeX, height - settings.groundHeight - 22, 70, 8);
   }
+
+  // 中央上部にけーしロゴとスコア表示
+  const logoSize = Math.min(180, width * 0.25);
+  const logoX = width / 2 - logoSize / 2;
+  const logoY = 20;
+  ctx.drawImage(images.logo, logoX, logoY, logoSize, logoSize);
+
+  const scoreText = `SCORE ${Math.floor(state.score)}`;
+  const bestText = `BEST ${state.bestScore}`;
+  ctx.font = `${Math.round(14 + width * 0.01)}px "Press Start 2P", sans-serif`;
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#ffffff";
+  ctx.strokeStyle = "rgba(0,0,0,0.85)";
+  ctx.lineWidth = 5;
+  ctx.strokeText(scoreText, width / 2, logoY + logoSize + 28);
+  ctx.fillText(scoreText, width / 2, logoY + logoSize + 28);
+  ctx.strokeText(bestText, width / 2, logoY + logoSize + 52);
+  ctx.fillText(bestText, width / 2, logoY + logoSize + 52);
 }
 
 let lastTime = 0;
