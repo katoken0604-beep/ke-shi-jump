@@ -49,6 +49,7 @@ function resizeCanvas() {
   canvas.width = rect.width * state.dpi;
   canvas.height = rect.height * state.dpi;
   ctx.setTransform(state.dpi, 0, 0, state.dpi, 0, 0);
+  console.log(`Canvas resized to ${state.width}x${state.height}`);
 }
 
 function createPlayer() {
@@ -77,6 +78,7 @@ function startGame() {
   overlayText.textContent = "タップでジャンプ";
   overlay.style.opacity = "0.9";
   state.running = true;
+  console.log("Game started");
 }
 
 function gameOver() {
@@ -93,6 +95,7 @@ function gameOver() {
 }
 
 function onTap() {
+  console.log("onTap called", { gameOver: state.gameOver, running: state.running });
   if (state.gameOver) {
     startGame();
     return;
@@ -270,19 +273,29 @@ function initialize() {
   const imageList = Object.values(images);
   const totalImages = imageList.length;
   
-  const handleImageLoad = () => {
+  const checkIfReady = () => {
     loadedCount += 1;
+    console.log(`Image loaded: ${loadedCount}/${totalImages}`);
     if (loadedCount === totalImages) {
+      console.log("All images loaded, starting game");
       startGame();
     }
   };
   
   imageList.forEach((img) => {
-    img.addEventListener("load", handleImageLoad);
-    img.addEventListener("error", () => {
-      console.error("Failed to load image:", img.src);
-    });
+    if (img.complete && img.naturalHeight !== 0) {
+      // Already loaded
+      checkIfReady();
+    } else {
+      // Wait for load
+      img.addEventListener("load", checkIfReady);
+      img.addEventListener("error", (e) => {
+        console.error("Failed to load image:", img.src, e);
+        checkIfReady(); // Count as loaded anyway to not block
+      });
+    }
   });
+  
   requestAnimationFrame(loop);
 }
 
